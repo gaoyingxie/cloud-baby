@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>☁️ 云养娃 - 从出生到高考</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #FF6B9D;
+            --secondary: #4ECDC4;
+            --warning: #FFE66D;
+            --danger: #FF6B6B;
+            --bg: #FFF5F7;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text: #2D3436;
+            --text-light: #636E72;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+        
+        .clouds {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        }
+        
+        .game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* 开始界面 */
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            color: white;
+        }
+        
+        .game-title {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .game-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+        
+        .start-btn {
+            padding: 18px 50px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #FF6B9D, #FF8E53);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.4);
+            transition: all 0.3s;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 107, 157, 0.5);
+        }
+        
+        /* 游戏主界面 */
+        .game-screen {
+            display: none;
+        }
+        
+        /* 顶部状态栏 */
+        .status-bar {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .age-display {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .age-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .age-text {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stat-bar {
+            height: 8px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        /* 婴儿展示 */
+        .baby-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .baby-avatar {
+            font-size: 80px;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .baby-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .baby-status {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .status-tag {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            background: rgba(255, 107, 157, 0.2);
+            color: var(--primary);
+        }
+        
+        /* 事件区域 */
+        .event-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .event-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .event-desc {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+        
+        /* 选择按钮 */
+        .choices-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .choice-btn {
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.4;
+        }
+        
+        .choice-btn:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .choice-icon {
+            font-size: 20px;
+        }
+        
+        /* 日志区域 */
+        .log-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            font-size: 13px;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: var(--text-light);
+            font-size: 11px;
+        }
+        
+        /* 结束界面 */
+        .end-screen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            color: white;
+        }
+        
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            color: var(--text);
+            margin-bottom: 30px;
+        }
+        
+        .result-title {
+            font-size: 28px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .result-score {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+        
+        .result-school {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 107, 157, 0.1);
+            border-radius: 15px;
+        }
+        
+        .result-stats {
+            text-align: left;
+            margin: 20px 0;
+        }
+        
+        .result-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .restart-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(78, 205, 196, 0.4);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 500px) {
+            .game-title { font-size: 36px; }
+            .age-number { font-size: 28px; }
+            .baby-avatar { font-size: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="clouds"></div>
+    
+    <!-- 开始界面 -->
+    <div class="start-screen" id="startScreen">
+        <div class="game-title">☁️ 云养娃 <span style="font-size: 14px; color: #888;">v4.9</span></div>
+        <div class="game-subtitle">从出生到高考 · 18年陪伴</div>
+        <button class="start-btn" onclick="game.start()">开始养育</button>
+    </div>
+    
+    <!-- 游戏主界面 -->
+    <div class="game-screen" id="gameScreen">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="age-display">
+                <div class="age-number" id="ageDisplay">0岁</div>
+                <div class="age-text" id="stageDisplay">婴儿期</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item" id="moodItem" style="cursor:pointer;">
+                    <div class="stat-label">😊 情绪</div>
+                    <div class="stat-bar"><div class="stat-fill" id="moodBar" style="width: 80%; background: #FF6B9D;"></div></div>
+                    <div class="stat-value" id="moodValue">80</div>
+                </div>
+                <div class="stat-item" id="healthItem" style="cursor:pointer;">
+                    <div class="stat-label">❤️ 健康</div>
+                    <div class="stat-bar"><div class="stat-fill" id="healthBar" style="width: 100%; background: #4ECDC4;"></div></div>
+                    <div class="stat-value" id="healthValue">100</div>
+                </div>
+                <div class="stat-item" id="energyItem" style="cursor:pointer;">
+                    <div class="stat-label">💪 体力</div>
+                    <div class="stat-bar"><div class="stat-fill" id="energyBar" style="width: 100%; background: #FFE66D;"></div></div>
+                    <div class="stat-value" id="energyValue">100</div>
+                </div>
+                <div class="stat-item" id="moneyItem" style="cursor:pointer;">
+                    <div class="stat-label">💰 金钱</div>
+                    <div class="stat-value" id="moneyValue" style="margin-top: 10px;">¥5000</div>
+                </div>
+                <div class="stat-item" id="parentEnergyItem" style="cursor:pointer;">
+                    <div class="stat-label">👨‍👩‍👧 家长体力</div>
+                    <div class="stat-bar"><div class="stat-fill" id="parentEnergyBar" style="width: 100%; background: #9B59B6;"></div></div>
+                    <div class="stat-value" id="parentEnergyValue">100</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 婴儿展示 -->
+        <div class="baby-section">
+            <div class="baby-avatar" id="babyAvatar">👶</div>
+            <div class="baby-name" id="babyName">小宝</div>
+            <div class="baby-status">
+                <span class="status-tag" id="iqTag" style="cursor:pointer;">智商: 50</span>
+                <span class="status-tag" id="eqTag" style="cursor:pointer;">情商: 50</span>
+                <span class="status-tag" id="talentTag" style="cursor:pointer;">才艺: 0</span>
+                <span class="status-tag" id="charmTag" style="cursor:pointer;">魅力: 50</span>
+                <span class="status-tag" id="academicTag" style="cursor:pointer;">学业: 0</span>
+                <span class="status-tag" id="disciplineTag" style="cursor:pointer;">自律: 50</span>
+            </div>
+            <div style="margin-top:5px;font-size:10px;color:#999;">💡 点击属性查看作用</div>
+        </div>
+        
+        <!-- 事件区域 -->
+        <div class="event-section">
+            <div class="event-title" id="eventTitle">第1回合</div>
+            <div class="event-desc" id="eventDesc">宝宝饿了，正在哭闹...</div>
+            <div class="choices-container" id="choicesBox">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 日志 -->
+        <div class="log-section" id="logBox">
+            <div class="log-entry">
+                <span class="log-time">[0岁]</span> 宝宝出生了！
+            </div>
+        </div>
+    </div>
+    
+    <!-- 结束界面 -->
+    <div class="end-screen" id="endScreen">
+        <div class="result-card">
+            <div class="result-title">🎓 高考结束</div>
+            <div class="result-score" id="finalScore">0分</div>
+            <div class="result-school" id="finalSchool">等待录取...</div>
+            <div class="result-stats" id="finalStats">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+        <button class="restart-btn" onclick="game.restart()">再养一个</button>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
