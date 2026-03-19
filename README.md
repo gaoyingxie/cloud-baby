@@ -23,8 +23,6 @@
 
 **在线试玩：** https://gaoyingxie.github.io/cloud-baby/
 
-**国内镜像：** http://nos-jd.163yun.com/jdymusic/jdymusic/h5-games/cloud-baby/index.html
-
 ## 📱 支持平台
 
 - ✅ 桌面浏览器（Chrome、Firefox、Safari、Edge）
