@@ -203,8 +203,8 @@ function getConditionalEvent(state) {
     }
     
     // ========== 负面调节事件（防止健康/情绪一直涨）==========
-    // 健康良好时可能发生意外
-    if (child.health > 70 && Math.random() < 0.3) {
+    // 健康良好时可能发生意外（婴儿期除外）
+    if (stage.name !== '婴儿期' && child.health > 70 && Math.random() < 0.15) {
         possibleEvents.push({
             id: 'accident',
             title: '🤕 意外受伤',
@@ -405,26 +405,26 @@ const RANDOM_EVENTS = {
     baby: [
         { id: 'hungry', title: '🍼 饿了', desc: '宝宝肚子咕咕叫', 
           choices: [{ text: '喂奶', icon: '🍼', effect: { child: { mood: +10, health: +5 }, parent: { energy: -10 } } },
-                   { text: '哄睡', icon: '😴', effect: { child: { mood: -5 }, parent: { energy: -5 } } }] },
+                   { text: '哄睡', icon: '😴', effect: { child: { mood: +5 }, parent: { energy: -5 } } }] },
         { id: 'diaper', title: '💩 换尿布', desc: '一股异味传来...', 
           choices: [{ text: '马上换', icon: '🧻', effect: { child: { mood: +5, health: +3 }, parent: { energy: -5 } } },
-                   { text: '等会再说', icon: '⏰', effect: { child: { mood: -10, health: -5 } } }] },
+                   { text: '等会再说', icon: '⏰', effect: { child: { mood: -5, health: -2 } } }] },
         { id: 'cry_night', title: '🌙 夜哭', desc: '半夜突然大哭不止', 
-          choices: [{ text: '抱起来哄', icon: '🤱', effect: { child: { mood: +8 }, parent: { energy: -20 } } },
-                   { text: '检查尿布', icon: '🧻', effect: { child: { mood: +3 }, parent: { energy: -10 } } }] },
+          choices: [{ text: '抱起来哄', icon: '🤱', effect: { child: { mood: +8 }, parent: { energy: -15 } } },
+                   { text: '检查尿布', icon: '🧻', effect: { child: { mood: +5 }, parent: { energy: -8 } } }] },
         { id: 'first_word', title: '💬 第一次说话', desc: '宝宝咿咿呀呀好像在叫妈妈！', 
           choices: [{ text: '激动鼓励', icon: '❤️', effect: { child: { mood: +10, eq: +3 }, parent: { energy: -5 } } },
                    { text: '录下来', icon: '📱', effect: { child: { mood: +5, eq: +2 }, parent: { energy: -5 } } }] },
-        { id: 'stranger', title: '👶 认生', desc: '家里来了客人，宝宝大哭', 
-          choices: [{ text: '温柔安抚', icon: '🤗', effect: { child: { mood: +5, eq: +2 } } },
-                   { text: '让客人抱', icon: '👋', effect: { child: { mood: -10, eq: +5 } } }] },
-        { id: 'teething', title: '🦷 长牙不适', desc: '宝宝牙龈肿胀，一直哭闹', 
-          choices: [{ text: '买磨牙棒', icon: '🦴', cost: 100, effect: { child: { mood: +8, health: +3 }, parent: { money: -100 } } },
-                   { text: '冷敷缓解', icon: '🧊', effect: { child: { mood: +3 }, parent: { energy: -10 } } }] },
+        { id: 'stranger', title: '👶 认生', desc: '家里来了客人，宝宝有点怕生', 
+          choices: [{ text: '温柔安抚', icon: '🤗', effect: { child: { mood: +8, eq: +3 } } },
+                   { text: '陪TA一起欢迎', icon: '👋', effect: { child: { mood: +5, eq: +5 } } }] },
+        { id: 'teething', title: '🦷 长牙不适', desc: '宝宝牙龈肿胀，有点烦躁', 
+          choices: [{ text: '买磨牙棒', icon: '🦴', cost: 100, effect: { child: { mood: +10, health: +5 }, parent: { money: -100 } } },
+                   { text: '用冰毛巾敷', icon: '🧊', effect: { child: { mood: +6 }, parent: { energy: -5 } } }] },
         { id: 'sleep_training', title: '😴 睡眠训练', desc: '要不要让宝宝独立入睡？', 
-          choices: [{ text: '训练独立', icon: '💪', effect: { child: { discipline: +5, mood: -10 }, parent: { energy: +10 } } },
-                   { text: '继续陪睡', icon: '🤱', effect: { child: { mood: +5, discipline: -3 }, parent: { energy: -15 } } }] },
-        // ===== 新增正向成长事件 =====
+          choices: [{ text: '训练独立', icon: '💪', effect: { child: { discipline: +5, mood: +3 }, parent: { energy: +10 } } },
+                   { text: '继续陪睡', icon: '🤱', effect: { child: { mood: +5, discipline: -2 }, parent: { energy: -10 } } }] },
+        // ===== 正向成长事件 =====
         { id: 'first_step', title: '🚶 第一次走路', desc: '宝宝摇摇晃晃迈出了第一步！', 
           choices: [{ text: '激动鼓掌', icon: '👏', effect: { child: { mood: +15, health: +5, eq: +2 }, parent: { energy: -5 } } },
                    { text: '赶紧录下来', icon: '📱', effect: { child: { mood: +10, charm: +3 }, parent: { energy: -5 } } }] },
@@ -448,7 +448,26 @@ const RANDOM_EVENTS = {
                    { text: '买更多绘本', icon: '💰', cost: 200, effect: { child: { iq: +8, mood: +5, academic: +3 }, parent: { money: -200 } } }] },
         { id: 'baby_photo', title: '📸 被拍照了', desc: '宝宝对着镜头露出无齿的笑容，太可爱了', 
           choices: [{ text: '发朋友圈', icon: '📱', effect: { child: { mood: +8, charm: +3 }, parent: { energy: -3 } } },
-                   { text: '做成长相册', icon: '📒', cost: 150, effect: { child: { mood: +10, charm: +5 }, parent: { money: -150 } } }] }
+                   { text: '做成长相册', icon: '📒', cost: 150, effect: { child: { mood: +10, charm: +5 }, parent: { money: -150 } } }] },
+        // ===== 更多正向事件 =====
+        { id: 'baby_healthy', title: '💉 体检通过', desc: '宝宝去做体检，各项指标都很健康！', 
+          choices: [{ text: '买营养品奖励', icon: '🥗', cost: 300, effect: { child: { health: +10, mood: +8 }, parent: { money: -300 } } },
+                   { text: '夸奖宝宝真棒', icon: '👏', effect: { child: { mood: +8, health: +5 } } }] },
+        { id: 'baby_appetite', title: '🍜 食欲大开', desc: '宝宝今天辅食吃得特别好，奶也喝得干干净净', 
+          choices: [{ text: '多做一点', icon: '🍲', effect: { child: { health: +10, energy: +8 }, parent: { money: -100 } } },
+                   { text: '夸TA是个小吃货', icon: '😋', effect: { child: { mood: +10, health: +5 } } }] },
+        { id: 'baby_park', title: '🌳 公园散步', desc: '天气很好，抱着宝宝去公园晒太阳', 
+          choices: [{ text: '买婴儿车遮阳棚', icon: '🛒', cost: 200, effect: { child: { mood: +12, health: +8 }, parent: { money: -200 } } },
+                   { text: '陪TA看花草', icon: '🌺', effect: { child: { mood: +10, iq: +3 }, parent: { energy: -10 } } }] },
+        { id: 'baby_bottle', title: '🍼 自己拿奶瓶', desc: '宝宝学会自己抱住奶瓶喝了，进步好大！', 
+          choices: [{ text: '拍视频留念', icon: '📱', effect: { child: { mood: +10, discipline: +3 }, parent: { energy: -3 } } },
+                   { text: '夸TA真聪明', icon: '⭐', effect: { child: { mood: +12, iq: +2 } } }] },
+        { id: 'baby_wave', title: '👋 学会挥手', desc: '教宝宝再见，TA竟然学会了挥手！', 
+          choices: [{ text: '录下来发家庭群', icon: '📱', effect: { child: { mood: +10, eq: +5 }, parent: { energy: -3 } } },
+                   { text: '热情鼓掌表扬', icon: '👏', effect: { child: { mood: +12, eq: +3 } } }] },
+        { id: 'baby_cute', title: '萌照拍摄', desc: '宝宝今天特别配合，拍了一组超萌的照片', 
+          choices: [{ text: '洗出来挂墙上', icon: '🏠', cost: 200, effect: { child: { mood: +10, charm: +5 }, parent: { money: -200 } } },
+                   { text: '做表情包', icon: '😄', effect: { child: { mood: +12, charm: +3 } } }] }
     ],
     kindergarten: [
         { id: 'share', title: '🤝 抢玩具', desc: '宝宝和同学抢玩具', 
