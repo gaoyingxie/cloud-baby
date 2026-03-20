@@ -686,7 +686,7 @@ function calculateEnding(state) {
     else if (score >= 680) academicEnding.result = '🥇 985名校，前途无量';
     else if (score >= 620) academicEnding.result = '🥈 211大学，稳扎稳打';
     else if (score >= 580) academicEnding.result = '📚 普通一本，继续努力';
-    else if (score >= 520) academicEnding.result = '📖 二本院校，另辟蹊径';
+    else if (score >= 450) academicEnding.result = '📖 二本院校，另辟蹊径';
     else academicEnding.result = '😅 高考失利，人生还有别的路';
     endings.push(academicEnding);
     
