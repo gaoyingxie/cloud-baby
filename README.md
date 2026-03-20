@@ -1,7 +1,7 @@
 # 👶 云养娃 (Cloud Baby)
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://gaoyingxie.github.io/cloud-baby/)
-[![Version](https://img.shields.io/badge/Version-v5.0-blue)](https://github.com/gaoyingxie/cloud-baby/releases)
+[![Version](https://img.shields.io/badge/Version-v5.1-blue)](https://github.com/gaoyingxie/cloud-baby/releases)
 
 > 一款从出生到高考的养成模拟游戏
 
@@ -84,6 +84,11 @@
 - 💔 心理问题 - 情绪<15
 
 ## 🔄 更新日志
+
+### v5.1 (2026-03)
+- **修复婴儿期意外受伤bug** - 意外受伤事件已排除婴儿期，概率下调
+- **优化婴儿期事件选项** - 所有选项改为正向/低负面，提升游戏体验
+- **新增6个婴儿期正向事件** - 体检通过、食欲大开、公园散步、自己拿奶瓶、学会挥手、萌照拍摄
 
 ### v5.0 (2026-03)
 - **新增阶段转换庆典** - 每次升级时显示阶段数据总结和解锁路线提示
