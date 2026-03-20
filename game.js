@@ -1,6 +1,6 @@
 /**
- * ☁️ 云养娃 v3.0 - 深度养成系统
- * 资深游戏策划重制版：属性联动、多路线结局、丰富反馈
+ * ☁️ 云养娃 v5.0 - 深度养成系统
+ * 新增：里程碑成就系统、阶段转换庆典、各阶段正向成长事件
  */
 
 // ==================== 游戏配置 ====================
@@ -28,6 +28,172 @@ const CONFIG = {
 📖 学业(academic): 影响高考成绩（学术路线）
 💰 金钱: 购买道具、报班、医疗
 */
+
+// ==================== 里程碑成就系统 ====================
+const ACHIEVEMENTS = {
+    // 阶段里程碑
+    stage_up: {
+        name: '🌟 阶段突破',
+        desc: '孩子进入了新的成长阶段',
+        check: (state, prevStage) => prevStage !== state.getStage().name
+    },
+    // 学业成就
+    first_100: {
+        name: '📝 学业起步',
+        desc: '学业首次达到100',
+        check: (state) => state.child.academic >= 100
+    },
+    first_300: {
+        name: '🏆 学霸潜质',
+        desc: '学业首次达到300',
+        check: (state) => state.child.academic >= 300
+    },
+    first_500: {
+        name: '🧠 顶尖学子',
+        desc: '学业首次达到500',
+        check: (state) => state.child.academic >= 500
+    },
+    // 属性成就
+    high_iq: {
+        name: '🧠 智力超群',
+        desc: '智商达到120',
+        check: (state) => state.child.iq >= 120
+    },
+    high_eq: {
+        name: '💬 人际大师',
+        desc: '情商达到120',
+        check: (state) => state.child.eq >= 120
+    },
+    high_charm: {
+        name: '✨ 万人迷',
+        desc: '魅力达到120',
+        check: (state) => state.child.charm >= 120
+    },
+    high_talent: {
+        name: '🎨 艺术新星',
+        desc: '才艺达到100',
+        check: (state) => state.child.talent >= 100
+    },
+    // 健康成就
+    never_sick: {
+        name: '💪 体格健壮',
+        desc: '健康全程保持60以上',
+        check: (state) => state.child.health >= 60
+    },
+    // 情绪成就
+    always_happy: {
+        name: '😊 阳光少年',
+        desc: '情绪全程保持60以上',
+        check: (state) => state.child.mood >= 60
+    },
+    // 社交成就
+    popular: {
+        name: '👑 人见人爱',
+        desc: '魅力和情商同时达到80',
+        check: (state) => state.child.charm >= 80 && state.child.eq >= 80
+    },
+    // 金钱成就
+    rich_family: {
+        name: '💰 小康之家',
+        desc: '家庭资产超过10万',
+        check: (state) => state.parent.money >= 100000
+    },
+    wealthy_family: {
+        name: '🏠 中产富裕',
+        desc: '家庭资产超过50万',
+        check: (state) => state.parent.money >= 500000
+    },
+    // 路线成就
+    art_route: {
+        name: '🎭 艺术之魂',
+        desc: '解锁艺术路线（才艺>70）',
+        check: (state) => state.child.talent > 70
+    },
+    sports_route: {
+        name: '⚡ 运动健将',
+        desc: '解锁体育路线（健康>75体力>75）',
+        check: (state) => state.child.health > 75 && state.child.energy > 75
+    },
+    internet_route: {
+        name: '📱 网红体质',
+        desc: '解锁网红路线（魅力>75）',
+        check: (state) => state.child.charm > 75
+    },
+    // 特殊事件成就
+    survived_illness: {
+        name: '🏥 战胜病魔',
+        desc: '从重病中康复',
+        check: (state) => state._survivedIllness === true
+    },
+    first_love_handled: {
+        name: '💕 情感导师',
+        desc: '妥善处理了孩子的早恋事件',
+        check: (state) => state._handledFirstLove === true
+    },
+    study_abroad: {
+        name: '✈️ 海外留学',
+        desc: '成功送孩子出国深造',
+        check: (state) => state._studyAbroad === true
+    },
+    // 婴儿期特殊成就
+    baby_first_word: {
+        name: '💬 开口说话',
+        desc: '孩子第一次叫爸爸妈妈',
+        check: (state) => state._firstWordAchieved === true
+    },
+    baby_first_step: {
+        name: '🚶 蹒跚学步',
+        desc: '孩子第一次独立走路',
+        check: (state) => state._firstStepAchieved === true
+    },
+    baby_no_cry: {
+        name: '😇 天使宝宝',
+        desc: '婴儿期全程情绪保持50以上',
+        check: (state) => state.getStage().name === '婴儿期' && state.turn >= 8 && state.child.mood >= 50
+    }
+};
+
+class AchievementSystem {
+    constructor(state) {
+        this.state = state;
+        this.unlocked = new Set();
+        this.pendingAchievements = [];
+        this.checkHistory = {};
+    }
+    
+    check() {
+        const newlyUnlocked = [];
+        
+        Object.entries(ACHIEVEMENTS).forEach(([id, ach]) => {
+            // 避免重复触发
+            if (this.unlocked.has(id)) return;
+            
+            const lastCheck = this.checkHistory[id] || 0;
+            if (this.state.turn > lastCheck) {
+                this.checkHistory[id] = this.state.turn;
+                
+                if (ach.check(this.state)) {
+                    this.unlocked.add(id);
+                    newlyUnlocked.push({ id, ...ach });
+                }
+            }
+        });
+        
+        if (newlyUnlocked.length > 0) {
+            this.pendingAchievements.push(...newlyUnlocked);
+        }
+        
+        return newlyUnlocked;
+    }
+    
+    popAchievement() {
+        return this.pendingAchievements.shift() || null;
+    }
+    
+    hasPending() {
+        return this.pendingAchievements.length > 0;
+    }
+}
 
 // ==================== 天生词条（更丰富）====================
 const BORN_TRAITS = [
@@ -413,8 +579,8 @@ const RANDOM_EVENTS = {
           choices: [{ text: '抱起来哄', icon: '🤱', effect: { child: { mood: +8 }, parent: { energy: -20 } } },
                    { text: '检查尿布', icon: '🧻', effect: { child: { mood: +3 }, parent: { energy: -10 } } }] },
         { id: 'first_word', title: '💬 第一次说话', desc: '宝宝咿咿呀呀好像在叫妈妈！', 
-          choices: [{ text: '激动鼓励', icon: '❤️', effect: { child: { mood: +10, eq: +3 } } },
-                   { text: '录下来', icon: '📱', effect: { child: { mood: +5 }, parent: { energy: -5 } } }] },
+          choices: [{ text: '激动鼓励', icon: '❤️', effect: { child: { mood: +10, eq: +3 }, parent: { energy: -5 } }, flag: '_firstWordAchieved' },
+                   { text: '录下来', icon: '📱', effect: { child: { mood: +5, eq: +2 }, parent: { energy: -5 } }, flag: '_firstWordAchieved' }] },
         { id: 'stranger', title: '👶 认生', desc: '家里来了客人，宝宝大哭', 
           choices: [{ text: '温柔安抚', icon: '🤗', effect: { child: { mood: +5, eq: +2 } } },
                    { text: '让客人抱', icon: '👋', effect: { child: { mood: -10, eq: +5 } } }] },
@@ -423,7 +589,32 @@ const RANDOM_EVENTS = {
                    { text: '冷敷缓解', icon: '🧊', effect: { child: { mood: +3 }, parent: { energy: -10 } } }] },
         { id: 'sleep_training', title: '😴 睡眠训练', desc: '要不要让宝宝独立入睡？', 
           choices: [{ text: '训练独立', icon: '💪', effect: { child: { discipline: +5, mood: -10 }, parent: { energy: +10 } } },
-                   { text: '继续陪睡', icon: '🤱', effect: { child: { mood: +5, discipline: -3 }, parent: { energy: -15 } } }] }
+                   { text: '继续陪睡', icon: '🤱', effect: { child: { mood: +5, discipline: -3 }, parent: { energy: -15 } } }] },
+        // ===== 新增正向成长事件 =====
+        { id: 'first_step', title: '🚶 第一次走路', desc: '宝宝摇摇晃晃迈出了第一步！', 
+          choices: [{ text: '激动鼓掌', icon: '👏', effect: { child: { mood: +15, health: +5, eq: +2 }, parent: { energy: -5 } }, flag: '_firstStepAchieved' },
+                   { text: '赶紧录下来', icon: '📱', effect: { child: { mood: +10, charm: +3 }, parent: { energy: -5 } }, flag: '_firstStepAchieved' }] },
+        { id: 'baby_laugh', title: '😊 开心大笑', desc: '宝宝被逗得咯咯笑，眼睛弯成月牙', 
+          choices: [{ text: '继续逗TA', icon: '😄', effect: { child: { mood: +15, eq: +3 }, parent: { energy: -10 } } },
+                   { text: '抱起来亲亲', icon: '❤️', effect: { child: { mood: +12, health: +3 }, parent: { energy: -5 } } }] },
+        { id: 'baby_discover', title: '🔍 探索发现', desc: '宝宝对周围一切都充满好奇，在地上爬来爬去探索', 
+          choices: [{ text: '买益智玩具', icon: '🧩', cost: 300, effect: { child: { iq: +5, mood: +8 }, parent: { money: -300 } } },
+                   { text: '陪着一起探索', icon: '🤗', effect: { child: { iq: +3, eq: +3, mood: +5 }, parent: { energy: -10 } } }] },
+        { id: 'baby_hug', title: '🤗 主动撒娇', desc: '宝宝张开小手要抱抱，奶声奶气叫了一声', 
+          choices: [{ text: '立刻抱起来', icon: '🤱', effect: { child: { mood: +12, eq: +3 }, parent: { energy: -10 } } },
+                   { text: '逗TA多叫几声', icon: '😄', effect: { child: { mood: +8, eq: +5 }, parent: { energy: -5 } } }] },
+        { id: 'baby_sleep_well', title: '😇 睡整觉', desc: '宝宝今晚睡得特别香，一觉到天亮！', 
+          choices: [{ text: '温馨守护', icon: '👼', effect: { child: { energy: +20, health: +5, mood: +5 }, parent: { energy: +15 } } },
+                   { text: '轻轻亲一下', icon: '💋', effect: { child: { mood: +10, health: +3 }, parent: { energy: +5 } } }] },
+        { id: 'baby_bathe', title: '🛁 洗澡时光', desc: '宝宝在澡盆里踢水，玩得特别开心', 
+          choices: [{ text: '买可爱泳圈', icon: '🏊', cost: 200, effect: { child: { mood: +12, health: +8 }, parent: { money: -200 } } },
+                   { text: '多陪玩一会', icon: '🧸', effect: { child: { mood: +10, health: +5, eq: +2 }, parent: { energy: -10 } } }] },
+        { id: 'baby_read', title: '📖 亲子阅读', desc: '抱着宝宝读绘本，TA听得特别认真', 
+          choices: [{ text: '每天坚持读', icon: '📚', effect: { child: { iq: +5, mood: +8, eq: +2 }, parent: { energy: -10 } } },
+                   { text: '买更多绘本', icon: '💰', cost: 200, effect: { child: { iq: +8, mood: +5, academic: +3 }, parent: { money: -200 } } }] },
+        { id: 'baby_photo', title: '📸 被拍照了', desc: '宝宝对着镜头露出无齿的笑容，太可爱了', 
+          choices: [{ text: '发朋友圈', icon: '📱', effect: { child: { mood: +8, charm: +3 }, parent: { energy: -3 } } },
+                   { text: '做成长相册', icon: '📒', cost: 150, effect: { child: { mood: +10, charm: +5 }, parent: { money: -150 } } }] }
     ],
     kindergarten: [
         { id: 'share', title: '🤝 抢玩具', desc: '宝宝和同学抢玩具', 
@@ -446,7 +637,29 @@ const RANDOM_EVENTS = {
                    { text: '让TA安静玩', icon: '🧸', effect: { child: { mood: +3, discipline: -2 } } }] },
         { id: 'birthday_party', title: '🎂 生日派对', desc: '同学生日邀请TA去参加', 
           choices: [{ text: '准备礼物去', icon: '🎁', cost: 200, effect: { child: { eq: +5, mood: +10 }, parent: { money: -200 } } },
-                   { text: '婉拒不去', icon: '🙅', effect: { child: { mood: -5 } } }] }
+                   { text: '婉拒不去', icon: '🙅', effect: { child: { mood: -5 } } }] },
+        // ===== 新增正向事件 =====
+        { id: 'best_friend', title: '👫 交到好朋友', desc: '宝宝在幼儿园有了第一个好朋友，每天都期待去学校', 
+          choices: [{ text: '邀请来家玩', icon: '🏠', cost: 200, effect: { child: { eq: +8, mood: +12 }, parent: { money: -200, energy: -10 } } },
+                   { text: '多聊聊学校的事', icon: '💬', effect: { child: { eq: +6, mood: +8 } } }] },
+        { id: 'artwork', title: '🎨 画出大作', desc: '宝宝画了一幅特别有想象力的画，还得意地展示给家人看', 
+          choices: [{ text: '裱起来展示', icon: '🏆', effect: { child: { talent: +8, mood: +12, discipline: +3 }, parent: { money: -100 } } },
+                   { text: '夸TA是小毕加索', icon: '👏', effect: { child: { talent: +5, mood: +10, eq: +3 } } }] },
+        { id: 'sing_song', title: '🎵 唱首歌', desc: '宝宝学会了一首新儿歌，奶声奶气地唱给家人听', 
+          choices: [{ text: '一起合唱', icon: '🎤', effect: { child: { talent: +5, mood: +10, eq: +3 }, parent: { energy: -5 } } },
+                   { text: '发家庭群分享', icon: '📱', effect: { child: { mood: +8, charm: +3 } } }] },
+        { id: 'help_mom', title: '🏠 主动帮忙', desc: '宝宝今天主动帮妈妈收拾玩具，还说以后要当家务小能手', 
+          choices: [{ text: '表扬奖励', icon: '⭐', effect: { child: { mood: +10, discipline: +5, eq: +3 }, parent: { energy: +5 } } },
+                   { text: '一起做家务', icon: '👨‍👩‍👧', effect: { child: { eq: +5, discipline: +4, mood: +5 }, parent: { energy: -10 } } }] },
+        { id: 'show_talent', title: '🌟 发现天赋', desc: '幼儿园老师发现宝宝在某个方面特别有天赋！', 
+          choices: [{ text: '报相关兴趣班', icon: '🎯', cost: 1000, effect: { child: { talent: +12, mood: +8 }, parent: { money: -1000, energy: -10 } } },
+                   { text: '在家重点培养', icon: '🏠', effect: { child: { talent: +6, mood: +5, discipline: +3 } } }] },
+        { id: 'make_friends', title: '🤝 融入集体', desc: '宝宝从不爱说话变得主动和小朋友交流了', 
+          choices: [{ text: '开派对庆祝', icon: '🎉', cost: 500, effect: { child: { eq: +10, mood: +12, charm: +3 }, parent: { money: -500 } } },
+                   { text: '继续鼓励引导', icon: '💬', effect: { child: { eq: +8, mood: +8 } } }] },
+        { id: 'good_eater', title: '🍜 吃饭进步', desc: '以前挑食的宝宝现在能好好吃饭了，身体也变壮了', 
+          choices: [{ text: '多做营养餐', icon: '🥗', cost: 300, effect: { child: { health: +15, energy: +10, mood: +5 }, parent: { money: -300 } } },
+                   { text: '表扬鼓励', icon: '👏', effect: { child: { health: +8, mood: +8, discipline: +3 } } }] }
     ],
     elementary: [
         { id: 'exam_cheat', title: '📝 作弊被抓', desc: '考试时偷看旁边同学', 
@@ -492,7 +705,32 @@ const RANDOM_EVENTS = {
                    { text: '下次再说', icon: '🙅', effect: { child: { mood: -5 } } }] },
         { id: 'teacher_call', title: '📞 老师来电', desc: '班主任打电话说TA上课总走神', 
           choices: [{ text: '严肃批评', icon: '😠', effect: { child: { discipline: +8, mood: -15 } } },
-                   { text: '耐心沟通', icon: '💬', effect: { child: { discipline: +3, mood: -5 } } }] }
+                   { text: '耐心沟通', icon: '💬', effect: { child: { discipline: +3, mood: -5 } } }] },
+        // ===== 新增正向事件 =====
+        { id: 'perfect_score', title: '🏆 满分成绩', desc: '这次考试居然考了满分，全班震惊！', 
+          choices: [{ text: '大摆庆功宴', icon: '🎉', cost: 800, effect: { child: { mood: +20, academic: +5, charm: +3 }, parent: { money: -800 } } },
+                   { text: '激励继续努力', icon: '💪', effect: { child: { mood: +12, academic: +3, discipline: +3 } } }] },
+        { id: 'science_fair', title: '🔬 科学展获奖', desc: 'TA的小发明在校园科学展上获得了奖项！', 
+          choices: [{ text: '全力支持继续研究', icon: '💡', cost: 1000, effect: { child: { iq: +10, talent: +5, mood: +12 }, parent: { money: -1000 } } },
+                   { text: '鼓励学业为重', icon: '📚', effect: { child: { academic: +5, mood: +5 } } }] },
+        { id: 'reading_bug', title: '📚 爱上阅读', desc: 'TA迷上了阅读，每天写完作业就抱着书看', 
+          choices: [{ text: '买更多好书', icon: '📖', cost: 400, effect: { child: { iq: +8, academic: +8, mood: +8 }, parent: { money: -400 } } },
+                   { text: '陪TA一起读', icon: '🤗', effect: { child: { iq: +6, eq: +4, mood: +6 } } }] },
+        { id: 'best_disciplined', title: '📏 自律标兵', desc: 'TA这学期每天自觉完成作业，还主动预习复习', 
+          choices: [{ text: '奖励旅游', icon: '✈️', cost: 3000, effect: { child: { mood: +15, discipline: +10, eq: +3 }, parent: { money: -3000 } } },
+                   { text: '精神表扬', icon: '🏅', effect: { child: { mood: +10, discipline: +8 } } }] },
+        { id: 'sports_champion', title: '🏃 运动会冠军', desc: 'TA在校运会某个项目夺得了第一名！', 
+          choices: [{ text: '庆祝一番', icon: '🎉', cost: 500, effect: { child: { health: +10, mood: +15, charm: +5 }, parent: { money: -500 } } },
+                   { text: '加入校队', icon: '⚽', effect: { child: { health: +8, talent: +5, mood: +10, eq: +3 } } }] },
+        { id: 'volunteer', title: '❤️ 爱心公益', desc: '学校组织公益活动，TA积极报名参加', 
+          choices: [{ text: '全力支持', icon: '👍', effect: { child: { eq: +10, mood: +10, discipline: +3 }, parent: { money: -200 } } },
+                   { text: '一起去参加', icon: '👨‍👩‍👧', effect: { child: { eq: +8, mood: +8, discipline: +5 }, parent: { energy: -15 } } }] },
+        { id: 'hometown_hero', title: '🌟 为校争光', desc: 'TA代表学校参加比赛并获得奖项，为班级争光', 
+          choices: [{ text: '开表彰会', icon: '🏆', cost: 600, effect: { child: { mood: +18, charm: +8, discipline: +5 }, parent: { money: -600 } } },
+                   { text: '私下鼓励', icon: '💬', effect: { child: { mood: +12, discipline: +5 } } }] },
+        { id: 'growth_spurt', title: '📈 快速成长期', desc: 'TA突然长高了一大截，身体也越来越结实', 
+          choices: [{ text: '加强营养', icon: '🥩', cost: 500, effect: { child: { health: +15, energy: +10, mood: +5 }, parent: { money: -500 } } },
+                   { text: '报运动班', icon: '⚽', cost: 1000, effect: { child: { health: +12, energy: +8, mood: +5 }, parent: { money: -1000 } } }] }
     ],
     middle: [
         { id: 'game_addict', title: '🎮 游戏成瘾', desc: '偷偷玩手机被发现', 
@@ -706,6 +944,7 @@ class GameState {
         this.turn = 0;
         this.pendingEvent = null;
         this.traits = generateTraits();
+        this.prevStageName = null; // 用于检测阶段变化
         
         this.parent = {
             energy: 100,
@@ -727,6 +966,9 @@ class GameState {
         
         this.applyTraits();
         this.logs = [];
+        
+        // 成就系统
+        this.achievements = new AchievementSystem(this);
     }
     
     applyTraits() {
@@ -788,6 +1030,9 @@ class Game {
         
         this.ui.startScreen.style.display = 'none';
         this.ui.gameScreen.style.display = 'block';
+        
+        // 初始化当前阶段
+        this.state.prevStageName = this.state.getStage().name;
         
         this.displayTraits();
         this.addLog(`${this.state.child.name}出生了！`);
@@ -866,12 +1111,26 @@ class Game {
         }
         
         const stage = this.state.getStage();
+        const prevStageName = this.state.prevStageName;
         
         // 先检查条件事件（在恢复之前，确保能触发危机事件）
         const conditionEvent = getConditionalEvent(this.state);
         
         // 然后自然恢复
         this.naturalRecovery();
+        
+        // 检查是否进入了新阶段
+        if (prevStageName && prevStageName !== stage.name) {
+            this.showStageUpAchievement(prevStageName, stage);
+            return;
+        }
+        
+        // 检查成就
+        const newAchievements = this.state.achievements.check();
+        if (newAchievements.length > 0) {
+            this.showAchievementNotification(newAchievements);
+            return;
+        }
         
         if (conditionEvent) {
             // 有条件事件，优先处理
@@ -895,6 +1154,120 @@ class Game {
         } else {
             // 无事件，自由行动
             this.showFreeActions();
+        }
+    }
+    
+    showStageUpAchievement(prevStage, newStage) {
+        const stageNames = { '婴儿期': '👶', '幼儿园': '🧒', '小学': '👦', '初中': '🎒', '高中': '📚' };
+        const emoji = stageNames[newStage.name] || '⭐';
+        
+        const title = document.getElementById('eventTitle');
+        const desc = document.getElementById('eventDesc');
+        
+        title.textContent = `🎉 恭喜！${newStage.name}啦！`;
+        title.style.color = '#FFD700';
+        
+        // 生成本阶段数据总结
+        const summary = `
+            <div style="text-align:left; margin: 15px 0;">
+                <div style="margin-bottom: 10px;">${emoji} <strong>${this.state.child.name}</strong> 进入了 <strong>${newStage.name}</strong>！</div>
+                <div style="font-size: 13px; color: #666; line-height: 1.8;">
+                    <div>📊 当前学业: ${this.state.child.academic}</div>
+                    <div>🧠 智商: ${this.state.child.iq} | 💬 情商: ${this.state.child.eq}</div>
+                    <div>✨ 魅力: ${this.state.child.charm} | 🎨 才艺: ${this.state.child.talent}</div>
+                    <div>❤️ 健康: ${this.state.child.health} | 😊 情绪: ${this.state.child.mood}</div>
+                    <div>💰 家庭资产: ¥${this.state.parent.money.toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+        desc.innerHTML = summary;
+        
+        // 解锁路线提示
+        let routeHint = '';
+        if (this.state.child.talent > 50) routeHint += '🎨 艺术路线已解锁<br>';
+        if (this.state.child.charm > 50 && this.state.child.eq > 50) routeHint += '📱 社交路线已解锁<br>';
+        if (this.state.child.health > 60 && this.state.child.energy > 60) routeHint += '⚡ 体育路线已解锁<br>';
+        if (this.state.child.iq > 60) routeHint += '🧠 学术路线已解锁<br>';
+        
+        if (routeHint) {
+            desc.innerHTML += `<div style="font-size: 12px; color: #9b59b6; margin-top: 10px; padding: 8px; background: rgba(155,89,182,0.1); border-radius: 8px;"><strong>🌟 已解锁路线：</strong><br>${routeHint}</div>`;
+        }
+        
+        const choicesBox = document.getElementById('choicesBox');
+        choicesBox.innerHTML = '';
+        
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+        btn.innerHTML = `
+            <span class="choice-icon">${emoji}</span>
+            <div style="flex:1; text-align:left">
+                <div>继续成长之路</div>
+                <div style="font-size:11px;opacity:0.8;margin-top:2px">进入${newStage.name}，迎接新的挑战！</div>
+            </div>
+        `;
+        btn.onclick = () => {
+            this.state.prevStageName = newStage.name;
+            this.state.turn++;
+            this.addLog(`🎉 ${this.state.child.name}进入了${newStage.name}！`);
+            this.addLog(`💰 工资收入 +¥${newStage.income}`);
+            this.updateUI();
+            
+            // 更新阶段显示
+            document.getElementById('stageDisplay').textContent = newStage.name;
+            document.getElementById('babyAvatar').textContent = newStage.emoji;
+            
+            setTimeout(() => this.startTurn(), 500);
+        };
+        choicesBox.appendChild(btn);
+    }
+    
+    showAchievementNotification(achievements) {
+        const ach = achievements[0];
+        
+        const title = document.getElementById('eventTitle');
+        const desc = document.getElementById('eventDesc');
+        
+        title.textContent = `🏅 成就解锁：${ach.name}`;
+        title.style.color = '#f39c12';
+        desc.innerHTML = `
+            <div style="text-align:center; padding: 20px 0;">
+                <div style="font-size: 48px; margin-bottom: 10px;">🏆</div>
+                <div style="font-size: 18px; font-weight: bold; color: #f39c12;">${ach.name}</div>
+                <div style="font-size: 14px; color: #666; margin-top: 10px;">${ach.desc}</div>
+            </div>
+        `;
+        
+        const choicesBox = document.getElementById('choicesBox');
+        choicesBox.innerHTML = '';
+        
+        // 处理多个成就
+        const remaining = achievements.slice(1);
+        
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+        btn.innerHTML = `
+            <span class="choice-icon">👍</span>
+            <div style="flex:1; text-align:left">
+                <div>太棒了！</div>
+                ${remaining.length > 0 ? `<div style="font-size:11px;opacity:0.8;margin-top:2px">还有 ${remaining.length} 个成就待领取...</div>` : ''}
+            </div>
+        `;
+        btn.onclick = () => {
+            this.addLog(`🏅 成就解锁：${ach.name}`);
+            
+            if (remaining.length > 0) {
+                setTimeout(() => this.showAchievementNotification(remaining), 300);
+            } else {
+                setTimeout(() => this.startTurn(), 300);
+            }
+        };
+        choicesBox.appendChild(btn);
+        
+        // 同时添加到待处理列表
+        if (remaining.length > 0) {
+            this.state.achievements.pendingAchievements.unshift(...remaining);
         }
     }
     
@@ -1089,12 +1462,23 @@ class Game {
         
         this.applyEffect(choice.effect);
         
+        // 处理成就标记
+        if (choice.flag) {
+            this.state[choice.flag] = true;
+        }
+        
         // 修复：如果没有log，使用默认日志
         const logText = choice.log || `[事件] ${eventTitle} - ${choice.text}`;
         this.addLog(logText);
         
         // 事件不消耗回合
-        setTimeout(() => this.showFreeActions(), 500);
+        // 检查成就
+        const newAchievements = this.state.achievements.check();
+        if (newAchievements.length > 0) {
+            setTimeout(() => this.showAchievementNotification(newAchievements), 500);
+        } else {
+            setTimeout(() => this.showFreeActions(), 500);
+        }
     }
     
     handleFreeAction(action) {
@@ -1123,7 +1507,13 @@ class Game {
         this.state.turn++;
         this.addLog(`💰 工资收入 +¥${this.state.getStage().income}`);
         
-        setTimeout(() => this.startTurn(), 500);
+        // 检查成就
+        const newAchievements = this.state.achievements.check();
+        if (newAchievements.length > 0) {
+            setTimeout(() => this.showAchievementNotification(newAchievements), 500);
+        } else {
+            setTimeout(() => this.startTurn(), 500);
+        }
     }
     
     calculateEffect(action) {
