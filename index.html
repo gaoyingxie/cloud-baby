@@ -352,9 +352,86 @@
         }
         
         @media (max-width: 500px) {
-            .game-title { font-size: 36px; }
-            .age-number { font-size: 28px; }
-            .baby-avatar { font-size: 60px; }
+            .game-container {
+                padding: 10px;
+            }
+            
+            /* 开始界面手机适配 */
+            .game-title { font-size: 32px; }
+            .game-subtitle { font-size: 14px; }
+            .start-btn { padding: 14px 36px; font-size: 16px; }
+            
+            /* 状态栏紧凑化 */
+            .status-bar {
+                padding: 12px;
+                margin-bottom: 10px;
+                border-radius: 15px;
+            }
+            .age-display {
+                margin-bottom: 10px;
+            }
+            .age-number { font-size: 24px; }
+            .age-text { font-size: 12px; }
+            .stats-grid {
+                gap: 8px;
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .stat-item {
+                padding: 8px;
+                border-radius: 10px;
+            }
+            .stat-label { font-size: 10px; }
+            .stat-value { font-size: 12px; margin-top: 2px; }
+            .stat-bar { height: 6px; }
+            
+            /* 宝宝区域紧凑化 */
+            .baby-section {
+                padding: 12px;
+                margin-bottom: 10px;
+                border-radius: 15px;
+            }
+            .baby-avatar {
+                font-size: 48px;
+                margin-bottom: 8px;
+            }
+            .baby-name { font-size: 18px; margin-bottom: 6px; }
+            .baby-status { gap: 6px; }
+            .status-tag {
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+            }
+            
+            /* 事件区域紧凑化 */
+            .event-section {
+                padding: 12px;
+                margin-bottom: 10px;
+                border-radius: 15px;
+            }
+            .event-title { font-size: 14px; margin-bottom: 6px; }
+            .event-desc { font-size: 13px; line-height: 1.4; margin-bottom: 10px; }
+            .choices-container { gap: 8px; }
+            .choice-btn {
+                padding: 10px 12px;
+                border-radius: 12px;
+                font-size: 13px;
+                gap: 8px;
+            }
+            .choice-icon { font-size: 16px; }
+            
+            /* 日志区域 */
+            .log-section {
+                padding: 10px;
+                max-height: 120px;
+                border-radius: 15px;
+            }
+            .log-entry { font-size: 11px; padding: 5px 0; }
+            .log-time { font-size: 10px; }
+            
+            /* 提示文字 */
+            .baby-section > div:last-child {
+                font-size: 9px !important;
+            }
         }
     </style>
 </head>
