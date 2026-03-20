@@ -1,6 +1,6 @@
 /**
- * ☁️ 云养娃 v5.1 - 深度养成系统
- * 新增：阶段转换庆典、各阶段正向成长事件
+ * ☁️ 云养娃 v5.2 - 深度养成系统
+ * 新增：回合提示、阶段剩余回合数、结算全属性展示、优化被欺负事件
  */
 
 // ==================== 游戏配置 ====================
@@ -245,8 +245,8 @@ function getConditionalEvent(state) {
         });
     }
     
-    // 被欺负事件（影响情绪和健康）
-    if (stage.name !== '婴儿期' && Math.random() < 0.2) {
+    // 被欺负事件（影响情绪和健康）- 降低概率
+    if (stage.name !== '婴儿期' && Math.random() < 0.08) {
         possibleEvents.push({
             id: 'bullied',
             title: '😭 被欺负了',
@@ -256,6 +256,49 @@ function getConditionalEvent(state) {
                 { text: '🤗 安慰并找老师', icon: '🤗', effect: { child: { mood: +10, health: -5, eq: +3 }, parent: { energy: -15 } }, log: '找老师沟通后情况好转了。' },
                 { text: '🥊 教TA打回去', icon: '🥊', effect: { child: { mood: -5, health: -10, discipline: -5 } }, log: '以暴制暴让情况更复杂了。' },
                 { text: '🙈 忍一忍算了', icon: '🙈', effect: { child: { mood: -20, health: -5 } }, log: '一味忍让让TA更委屈。' }
+            ]
+        });
+    }
+    
+    // ===== 新增正向社交事件 =====
+    // 交到好朋友
+    if (stage.name !== '婴儿期' && Math.random() < 0.12) {
+        possibleEvents.push({
+            id: 'new_friend',
+            title: '👫 交到好朋友',
+            desc: `${state.child.name}在学校交到了一个新的好朋友！`,
+            priority: 45,
+            choices: [
+                { text: '邀请来家玩', icon: '🏠', cost: 200, effect: { child: { eq: +8, mood: +12 }, parent: { money: -200, energy: -10 } }, log: '一起玩耍，友谊更深了！' },
+                { text: '多聊聊学校的事', icon: '💬', effect: { child: { eq: +6, mood: +8 } }, log: 'TA交到了新朋友很开心。' }
+            ]
+        });
+    }
+    
+    // 受到表扬
+    if (stage.name !== '婴儿期' && stage.name !== '幼儿园' && Math.random() < 0.1) {
+        possibleEvents.push({
+            id: 'praised',
+            title: '⭐ 受到表扬',
+            desc: `${state.child.name}在学校表现优秀，被老师表扬了！`,
+            priority: 40,
+            choices: [
+                { text: '奖励一顿大餐', icon: '🍔', cost: 300, effect: { child: { mood: +15, discipline: +5 }, parent: { money: -300 } }, log: '孩子开心极了！' },
+                { text: '精神表扬', icon: '👏', effect: { child: { mood: +10, discipline: +3 } }, log: '继续加油！' }
+            ]
+        });
+    }
+    
+    // 课外活动获奖
+    if (stage.name !== '婴儿期' && stage.name !== '幼儿园' && Math.random() < 0.08) {
+        possibleEvents.push({
+            id: 'competition_win',
+            title: '🏆 比赛获奖',
+            desc: `${state.child.name}参加的课外比赛获奖了！`,
+            priority: 42,
+            choices: [
+                { text: '大摆庆功宴', icon: '🎉', cost: 500, effect: { child: { mood: +18, charm: +5, talent: +3 }, parent: { money: -500 } }, log: '庆祝获奖！' },
+                { text: '买奖品鼓励', icon: '🎁', cost: 300, effect: { child: { mood: +12, discipline: +5 }, parent: { money: -300 } }, log: '继续努力！' }
             ]
         });
     }
@@ -872,6 +915,9 @@ class Game {
     }
     
     start() {
+        const totalTurns = CONFIG.TOTAL_TURNS;
+        alert(`📅 游戏共 ${totalTurns} 回合（约18年人生旅程）\n\n每个回合 = 约4.5个月，每个阶段有固定的回合数。\n合理安排学习和休息，迎接高考！`);
+        
         let name = prompt('给宝宝起个名字（最多6个字）：', '小宝');
         if (name) {
             name = name.trim().substring(0, 6);
@@ -885,7 +931,7 @@ class Game {
         this.state.prevStageName = this.state.getStage().name;
         
         this.displayTraits();
-        this.addLog(`${this.state.child.name}出生了！`);
+        this.addLog(`${this.state.child.name}出生了！共${totalTurns}回合，加油！`);
         this.state.traits.forEach(t => this.addLog(`✨ ${t.name}: ${t.desc}`));
         
         this.startTurn();
@@ -1372,8 +1418,10 @@ class Game {
     
     updateUI() {
         const stage = this.state.getStage();
+        const turnsLeftInStage = stage.end - this.state.turn;
+        const totalTurnsLeft = CONFIG.TOTAL_TURNS - this.state.turn;
         document.getElementById('ageDisplay').textContent = this.state.getAgeText();
-        document.getElementById('stageDisplay').textContent = stage.name;
+        document.getElementById('stageDisplay').textContent = `${stage.name} (剩余${turnsLeftInStage}回合)`;
         document.getElementById('babyAvatar').textContent = stage.emoji;
         
         document.getElementById('moodBar').style.width = this.state.child.mood + '%';
@@ -1459,13 +1507,16 @@ class Game {
         
         let statsHtml = `
             <div class="result-stat"><span>💰 最终资产</span><span>¥${this.state.parent.money.toLocaleString()}</span></div>
-            <div class="result-stat"><span>智商</span><span>${this.state.child.iq}</span></div>
-            <div class="result-stat"><span>情商</span><span>${this.state.child.eq}</span></div>
-            <div class="result-stat"><span>才艺</span><span>${this.state.child.talent}</span></div>
-            <div class="result-stat"><span>魅力</span><span>${this.state.child.charm}</span></div>
-            <div class="result-stat"><span>健康</span><span>${this.state.child.health}</span></div>
-            <div class="result-stat"><span>自律</span><span>${this.state.child.discipline}</span></div>
-            <div class="result-stat"><span>最终路线</span><span>${result.bestRoute}</span></div>
+            <div class="result-stat"><span>🧠 智商</span><span>${this.state.child.iq}</span></div>
+            <div class="result-stat"><span>💬 情商</span><span>${this.state.child.eq}</span></div>
+            <div class="result-stat"><span>🎨 才艺</span><span>${this.state.child.talent}</span></div>
+            <div class="result-stat"><span>✨ 魅力</span><span>${this.state.child.charm}</span></div>
+            <div class="result-stat"><span>📖 学业</span><span>${this.state.child.academic}</span></div>
+            <div class="result-stat"><span>📏 自律</span><span>${this.state.child.discipline}</span></div>
+            <div class="result-stat"><span>❤️ 健康</span><span>${this.state.child.health}</span></div>
+            <div class="result-stat"><span>😊 情绪</span><span>${this.state.child.mood}</span></div>
+            <div class="result-stat"><span>💪 体力</span><span>${this.state.child.energy}</span></div>
+            <div class="result-stat"><span>🏆 最终路线</span><span>${result.bestRoute}</span></div>
         `;
         
         // 显示所有可能的结局
